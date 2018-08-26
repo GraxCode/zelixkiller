@@ -13,7 +13,7 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 ### ZKM 11
 
 | Transformer | Short Version | Description |
-| --- | --- |
+| --- | --- | --- |
 | String Obfuscation | s11 | Deobfuscates (enchanced) string obfuscation |
 | ~~Reference Obfuscation~~ | r11 | Deobfuscates reflection obfuscation |
 | ~~Control Flow Obfuscation~~ | cf11 | Deobfuscates flow and exception obfuscation |
@@ -21,7 +21,7 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 ### ZKM 8
 
 | Transformer | Short Version | Description |
-| --- | --- |
+| --- | --- | --- |
 | ~~String Obfuscation~~ | s8 | Deobfuscates (enchanced) string obfuscation |
 | ~~Reference Obfuscation~~ | r8 | Deobfuscates reflection obfuscation |
 | ~~Control Flow Obfuscation~~ | cf8 | Deobfuscates flow and exception obfuscation |
