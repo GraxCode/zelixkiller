@@ -18,6 +18,7 @@ import org.objectweb.asm.tree.ClassNode;
 
 import me.lpk.util.JarUtils;
 import me.nov.zelixkiller.transformer.Transformer;
+import me.nov.zelixkiller.transformer.zkm.ExceptionObfuscationTX;
 import me.nov.zelixkiller.transformer.zkm11.StringObfuscationT11;
 
 public class ZelixKiller {
@@ -25,7 +26,9 @@ public class ZelixKiller {
 	private final static HashMap<String, Class<? extends Transformer>> transformers = new HashMap<>();
 
 	static {
+		System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tT] [%4$-7s] %5$s %n");
 		transformers.put("s11", StringObfuscationT11.class);
+		transformers.put("ex", ExceptionObfuscationTX.class);
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -73,8 +76,8 @@ public class ZelixKiller {
 		Map<String, byte[]> out = JarUtils.loadNonClassEntries(input);
 		JarArchive ja = new JarArchive(input, classes, out);
 		logger.log(Level.INFO, "Starting with deobfuscation using transformer " + t.getClass().getSimpleName());
-		for (ClassNode cn : new ArrayList<>(classes.values())) { 
-			if(t.isAffected(cn)) {
+		for (ClassNode cn : new ArrayList<>(classes.values())) {
+			if (t.isAffected(cn)) {
 				t.transform(ja, cn);
 			}
 		}

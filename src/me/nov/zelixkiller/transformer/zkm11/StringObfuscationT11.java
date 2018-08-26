@@ -42,7 +42,10 @@ public class StringObfuscationT11 extends Transformer {
 	private boolean invokedynamicWarn;
 	@Override
 	public boolean isAffected(ClassNode cn) {
-		MethodNode staticInitializer = cn.methods.stream().filter(mn -> mn.name.equals("<clinit>")).findFirst().get();
+		if(cn.methods.isEmpty()) {
+			return false;
+		}
+		MethodNode staticInitializer = cn.methods.stream().filter(mn -> mn.name.equals("<clinit>")).findFirst().orElse(null);
 		return staticInitializer != null && containsEncryptedLDC(staticInitializer);
 	}
 
