@@ -17,7 +17,7 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 | String Obfuscation | s11 | Deobfuscates (enchanced) string obfuscation |
 | ~~String Obfuscation (Cipher Version)~~ | si11 | Deobfuscates string obfuscation that uses DES Cipher and invokedynamic |
 | ~~Reference Obfuscation~~ | r11 | Deobfuscates reflection obfuscation |
-| ~~Control Flow Obfuscation~~ | cf11 | Deobfuscates flow and exception obfuscation |
+| ~~Control Flow Obfuscation~~ | cf11 | Deobfuscates flow obfuscation |
 
 ### ZKM 8
 
@@ -27,6 +27,11 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 | ~~Reference Obfuscation~~ | r8 | Deobfuscates reflection obfuscation |
 | ~~Control Flow Obfuscation~~ | cf8 | Deobfuscates flow and exception obfuscation |
 
+### ZKM General
+
+| Transformer | Short Version | Description |
+| --- | --- | --- |
+| Exception Obfuscation | ex | Removes redundant try catch blocks |
 
 ## Libraries needed
 commons-io 2.6, commons-cli 1.4
