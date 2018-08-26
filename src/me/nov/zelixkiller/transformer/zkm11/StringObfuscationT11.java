@@ -141,7 +141,11 @@ public class StringObfuscationT11 extends Transformer {
 			}
 			// to finish everything, clean up class
 			AbstractInsnNode ret = InsnUtils.findFirst(clinit.instructions, RETURN);
-			while (!(ret instanceof LabelNode)) {
+			while (ret != null) {
+				if (ret instanceof LabelNode && ((ret.getPrevious().getOpcode() == TABLESWITCH)
+						|| (ret.getPrevious().getOpcode() == GOTO && ret.getPrevious().getPrevious().getOpcode() == POP))) {
+					break;
+				}
 				ret = ret.getPrevious();
 			}
 			InsnList originalClinit = MethodUtils.copy(clinit.instructions, ret, null);
@@ -161,10 +165,14 @@ public class StringObfuscationT11 extends Transformer {
 	private Class<?> createProxy(MethodNode mathMethod, MethodNode clinit) {
 		// cut off rest of static initializer
 		AbstractInsnNode ret = InsnUtils.findFirst(clinit.instructions, RETURN);
-		while (!(ret instanceof FrameNode) && ret.getPrevious().getPrevious().getOpcode() != TABLESWITCH) {
+		while (ret != null) {
+			if (ret.getNext() instanceof FrameNode && ret instanceof LabelNode && ((ret.getPrevious().getOpcode() == TABLESWITCH)
+					|| (ret.getPrevious().getOpcode() == GOTO && ret.getPrevious().getPrevious().getOpcode() == POP))) {
+				break;
+			}
 			ret = ret.getPrevious();
 		}
-		InsnList decryption = MethodUtils.copy(clinit.instructions, null, ret);
+		InsnList decryption = MethodUtils.copy(clinit.instructions, null, ret.getNext());
 		decryption.add(new InsnNode(RETURN));
 		MethodNode emulationNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, "static_init", "()V", null, null);
 		emulationNode.instructions.add(decryption);
@@ -278,7 +286,11 @@ public class StringObfuscationT11 extends Transformer {
 		}
 		// to finish everything, clean up class
 		AbstractInsnNode ret = InsnUtils.findFirst(clinit.instructions, RETURN);
-		while (!(ret instanceof LabelNode) && ret.getPrevious().getOpcode() != TABLESWITCH) {
+		while (ret != null) {
+			if (ret instanceof LabelNode && ((ret.getPrevious().getOpcode() == TABLESWITCH)
+					|| (ret.getPrevious().getOpcode() == GOTO && ret.getPrevious().getPrevious().getOpcode() == POP))) {
+				break;
+			}
 			ret = ret.getPrevious();
 		}
 		InsnList originalClinit = MethodUtils.copy(clinit.instructions, ret, null);
