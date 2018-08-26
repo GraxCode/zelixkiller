@@ -161,7 +161,7 @@ public class StringObfuscationT11 extends Transformer {
 	private Class<?> createProxy(MethodNode mathMethod, MethodNode clinit) {
 		// cut off rest of static initializer
 		AbstractInsnNode ret = InsnUtils.findFirst(clinit.instructions, RETURN);
-		while (!(ret instanceof FrameNode)) {
+		while (!(ret instanceof FrameNode) && ret.getPrevious().getPrevious().getOpcode() != TABLESWITCH) {
 			ret = ret.getPrevious();
 		}
 		InsnList decryption = MethodUtils.copy(clinit.instructions, null, ret);
@@ -278,7 +278,7 @@ public class StringObfuscationT11 extends Transformer {
 		}
 		// to finish everything, clean up class
 		AbstractInsnNode ret = InsnUtils.findFirst(clinit.instructions, RETURN);
-		while (!(ret instanceof LabelNode)) {
+		while (!(ret instanceof LabelNode) && ret.getPrevious().getOpcode() != TABLESWITCH) {
 			ret = ret.getPrevious();
 		}
 		InsnList originalClinit = MethodUtils.copy(clinit.instructions, ret, null);
