@@ -1,5 +1,6 @@
 package me.nov.zelixkiller.transformer.zkm11;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -28,15 +29,17 @@ import me.nov.zelixkiller.JarArchive;
 import me.nov.zelixkiller.ZelixKiller;
 import me.nov.zelixkiller.transformer.Transformer;
 import me.nov.zelixkiller.utils.InsnUtils;
+import me.nov.zelixkiller.utils.IssueUtils;
 import me.nov.zelixkiller.utils.MethodUtils;
 import me.nov.zelixkiller.utils.analysis.ConstantTracker;
 import me.nov.zelixkiller.utils.analysis.ConstantTracker.ConstantValue;
 
+/**
+ * Old ZKM String Obfuscation technique that is still used in some cases
+ */
 public class StringObfuscationT11 extends Transformer {
 
 	private boolean invokedynamicWarn;
-	private JarArchive ja;
-
 	@Override
 	public boolean isAffected(ClassNode cn) {
 		MethodNode staticInitializer = cn.methods.stream().filter(mn -> mn.name.equals("<clinit>")).findFirst().get();
@@ -84,7 +87,6 @@ public class StringObfuscationT11 extends Transformer {
 
 	@Override
 	public void transform(JarArchive ja, ClassNode cn) {
-		this.ja = ja;
 		MethodNode clinit = cn.methods.stream().filter(mn -> mn.name.equals("<clinit>")).findFirst().get();
 		if (InsnUtils.containsOpcode(clinit.instructions, INVOKEDYNAMIC)) {
 			ZelixKiller.logger.log(Level.WARNING,
@@ -217,8 +219,6 @@ public class StringObfuscationT11 extends Transformer {
 			proxy.methods.add(mathMethodNode);
 		}
 		proxy.methods.add(emulationNode);
-		if (!ja.getClasses().containsKey("proxy"))
-			ja.getClasses().put("proxy", proxy);
 		// regenerate frames if original file throws verify errors
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		proxy.accept(cw);
@@ -227,13 +227,15 @@ public class StringObfuscationT11 extends Transformer {
 			clazz.getDeclaredMethod("static_init").invoke(null, (Object[]) null);
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException("clinit decryption unsuccessful (invocation)");
+			IssueUtils.dump(new File("fault-proxy-dump" + (System.currentTimeMillis() % 100) + ".jar"), proxy);
+			throw new RuntimeException("clinit decryption unsuccessful (invocation) at class " + clinit.owner);
 		}
 
 		for (Field f : clazz.getDeclaredFields()) {
 			try {
 				f.setAccessible(true);
 				if (f.get(null) == null) {
+					IssueUtils.dump(new File("fault-proxy-dump" + (System.currentTimeMillis() % 100) + ".jar"), proxy);
 					throw new RuntimeException("clinit decryption unsuccessful");
 				}
 			} catch (Exception e) {

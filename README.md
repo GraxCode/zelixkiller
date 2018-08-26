@@ -15,6 +15,7 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 | Transformer | Short Version | Description |
 | --- | --- | --- |
 | String Obfuscation | s11 | Deobfuscates (enchanced) string obfuscation |
+| ~~String Obfuscation (Cipher Version)~~ | si11 | Deobfuscates string obfuscation that uses DES Cipher and invokedynamic |
 | ~~Reference Obfuscation~~ | r11 | Deobfuscates reflection obfuscation |
 | ~~Control Flow Obfuscation~~ | cf11 | Deobfuscates flow and exception obfuscation |
 
@@ -34,4 +35,5 @@ commons-io 2.6, commons-cli 1.4
 zelixkiller is licensed under the GNU General Public License 3.0
 
 #### Notice
-Please open an issue or send me an email if your file won't deobfuscate properly.
+Do not deobfuscate any file that doesn't belong to you.  
+Please open an issue or send me an email if your file won't deobfuscate properly. If a "fault-proxy-dump" file is created please attach.
