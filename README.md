@@ -15,7 +15,7 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 | Transformer | Short Version | Description |
 | --- | --- | --- |
 | String Obfuscation | s11 | Deobfuscates (enchanced) string obfuscation |
-| ~~String Obfuscation (Cipher Version)~~ | si11 | Deobfuscates string obfuscation that uses DES Cipher and invokedynamic |
+| String Obfuscation (Cipher Version) | si11 | Deobfuscates string obfuscation that uses DES Cipher and invokedynamic calls |
 | ~~Reference Obfuscation~~ | r11 | Deobfuscates reflection obfuscation |
 | ~~Control Flow Obfuscation~~ | cf11 | Deobfuscates flow obfuscation |
 
@@ -23,7 +23,7 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 
 | Transformer | Short Version | Description |
 | --- | --- | --- |
-| ~~String Obfuscation~~ | s8 | Deobfuscates (enchanced) string obfuscation |
+| ~~String Obfuscation~~ | s8 (s11 ?) | Deobfuscates (enchanced) string obfuscation |
 | ~~Reference Obfuscation~~ | r8 | Deobfuscates reflection obfuscation |
 | ~~Control Flow Obfuscation~~ | cf8 | Deobfuscates flow and exception obfuscation |
 

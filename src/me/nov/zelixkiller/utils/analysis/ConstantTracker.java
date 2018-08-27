@@ -296,10 +296,12 @@ public class ConstantTracker extends Interpreter<ConstantTracker.ConstantValue> 
 
 	@Override
 	public ConstantValue merge(ConstantValue a, ConstantValue b) {
-		if (a == b)
+		if (a.equals(b))
 			return a;
 		BasicValue t = basic.merge(a.type, b.type);
-		return t.equals(a.type) && (a.value == null && a != NULL || a.value.equals(b.value)) ? a
+		if ((a == null) || (a == null) || t == null)
+			System.out.println((a != null) + " " + (b != null));
+		return t.equals(a.type) && (a.value == null && a != NULL || a.value != null && a.value.equals(b.value)) ? a
 				: t.equals(b.type) && b.value == null && b != NULL ? b : new ConstantValue(t, null);
 	}
 }

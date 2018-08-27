@@ -6,6 +6,7 @@ import java.util.Map;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.MethodNode;
 
 public class MethodUtils {
 	public static Map<LabelNode, LabelNode> getLabelMap(InsnList list) {
@@ -35,5 +36,14 @@ public class MethodUtils {
 			ain = ain.getNext();
 		}
 		return newList;
+	}
+
+	public static MethodNode cloneInstructions(MethodNode method) {
+		MethodNode mn = new MethodNode(method.access, method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
+		mn.instructions.add(copy(method.instructions, null, null));
+		mn.localVariables.clear();
+		mn.maxLocals = method.maxLocals;
+		mn.maxStack = method.maxStack;
+		return mn;
 	}
 }

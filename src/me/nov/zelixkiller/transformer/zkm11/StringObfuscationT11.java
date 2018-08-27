@@ -52,7 +52,7 @@ public class StringObfuscationT11 extends Transformer {
 	/**
 	 * Ensure it has zkm parts in it
 	 */
-	private boolean containsEncryptedLDC(MethodNode clinit) {
+	public static boolean containsEncryptedLDC(MethodNode clinit) {
 		for (AbstractInsnNode ain : clinit.instructions.toArray()) {
 			if (ain.getOpcode() == LDC) {
 				String cst = String.valueOf(((LdcInsnNode) ain).cst);

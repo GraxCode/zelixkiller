@@ -3,6 +3,8 @@ package me.lpk.analysis;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
+
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -20,15 +22,14 @@ import me.lpk.util.OpUtils;
 
 public class Sandbox {
 	/**
-	 * Invokes the method through reflection. Other methods and fields are
-	 * removed to prevent accidental execution.
+	 * Invokes the method through reflection. Other methods and fields are removed to prevent accidental execution.
 	 * 
 	 * @param owner
-	 *            Decryption classnode
+	 *          Decryption classnode
 	 * @param min
-	 *            Decryption method
+	 *          Decryption method
 	 * @param args
-	 *            Decryption method args
+	 *          Decryption method args
 	 * @return
 	 */
 	public static Object getIsolatedReturn(ClassNode owner, MethodInsnNode min, Object[] args) {
@@ -50,17 +51,16 @@ public class Sandbox {
 	}
 
 	/**
-	 * Simulates a method call from a given method. All methods are removed
-	 * except the proxy call and the decrypt call.
+	 * Simulates a method call from a given method. All methods are removed except the proxy call and the decrypt call.
 	 * 
 	 * @param src
-	 *            The method origin.
+	 *          The method origin.
 	 * @param owner
-	 *            Decryption classnode.
+	 *          Decryption classnode.
 	 * @param min
-	 *            Decryption method.
+	 *          Decryption method.
 	 * @param args
-	 *            Decryption method args.
+	 *          Decryption method args.
 	 * @return
 	 */
 	public static Object getProxyIsolatedReturn(MethodNode src, ClassNode owner, MethodInsnNode min, Object[] args) {
@@ -122,13 +122,13 @@ public class Sandbox {
 	 * Simulates a method call from a given method.
 	 * 
 	 * @param src
-	 *            The method origin.
+	 *          The method origin.
 	 * @param owner
-	 *            Decryption classnode.
+	 *          Decryption classnode.
 	 * @param min
-	 *            Decryption method.
+	 *          Decryption method.
 	 * @param args
-	 *            Decryption method args.
+	 *          Decryption method args.
 	 * @return
 	 */
 	public static Object getProxyReturn(MethodNode src, ClassNode owner, MethodInsnNode min, Object[] args) {
@@ -181,7 +181,7 @@ public class Sandbox {
 				}
 			}
 			// And the fields
-			for (FieldNode fn : owner.fields){
+			for (FieldNode fn : owner.fields) {
 				proxy.fields.add(fn);
 			}
 		} else {
@@ -191,16 +191,18 @@ public class Sandbox {
 		// Get the value by calling the proxy.
 		return get(proxy, methodCallProxy.name, "()Ljava/lang/String;", new Object[] {});
 	}
-	
+
 	/**
 	 * Fuck Stringer
+	 * 
 	 * @param src
 	 * @param owner
 	 * @param min
 	 * @param args
 	 * @return
 	 */
-	public static Object getProxyReturnStringer(String callerCaller, MethodNode src, ClassNode owner, MethodInsnNode min, Object[] args) {
+	public static Object getProxyReturnStringer(String callerCaller, MethodNode src, ClassNode owner, MethodInsnNode min,
+			Object[] args) {
 		if (owner == null) {
 			return null;
 		}
@@ -240,7 +242,8 @@ public class Sandbox {
 		methodCallProxy2.access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
 		methodCallProxy2.exceptions = new ArrayList<String>();
 		methodCallProxy2.owner = proxy2.name;
-		methodCallProxy2.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, methodCallProxy.owner, methodCallProxy.name, methodCallProxy.desc, false));
+		methodCallProxy2.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, methodCallProxy.owner,
+				methodCallProxy.name, methodCallProxy.desc, false));
 		methodCallProxy2.instructions.add(new InsnNode(Opcodes.ARETURN));
 		methodCallProxy2.visitMaxs(1, 0);
 		proxy2.methods.add(methodCallProxy2);
@@ -268,7 +271,7 @@ public class Sandbox {
 				}
 			}
 			// And the fields
-			for (FieldNode fn : owner.fields){
+			for (FieldNode fn : owner.fields) {
 				proxy.fields.add(fn);
 			}
 		} else {
@@ -284,11 +287,11 @@ public class Sandbox {
 	 * Invokes the method through reflection. The entire class is kept in-tact.
 	 * 
 	 * @param owner
-	 *            Decryption class
+	 *          Decryption class
 	 * @param min
-	 *            Decryption method
+	 *          Decryption method
 	 * @param args
-	 *            Decryption method args
+	 *          Decryption method args
 	 * @return
 	 */
 	public static Object getReturn(ClassNode owner, MethodInsnNode min, Object[] args) {
@@ -297,22 +300,18 @@ public class Sandbox {
 		}
 		return get(owner, min.name, min.desc, args);
 	}
-	
-
-
 
 	/**
-	 * Get the return value of a node's method given by it's name, description,
-	 * and passed args.
+	 * Get the return value of a node's method given by it's name, description, and passed args.
 	 * 
 	 * @param cn
-	 *            The class node to call.
+	 *          The class node to call.
 	 * @param name
-	 *            Name of the method to call.
+	 *          Name of the method to call.
 	 * @param desc
-	 *            Descriptor of the method to call.
+	 *          Descriptor of the method to call.
 	 * @param args
-	 *            Arguments.
+	 *          Arguments.
 	 * @return
 	 */
 	private static Object get(ClassNode cn, String name, String desc, Object[] args) {
@@ -340,8 +339,7 @@ public class Sandbox {
 	 * Load a class by it's node.
 	 * 
 	 * @param cn
-	 *            ClassNode to load. The static block is stripped so accidental
-	 *            invocation won't occur.
+	 *          ClassNode to load. The static block is stripped so accidental invocation won't occur.
 	 * @return
 	 */
 	public static Class<?> load(ClassNode cn) {
@@ -353,21 +351,39 @@ public class Sandbox {
 	/**
 	 * Classloader that loads a class from bytes.
 	 */
-	static class ClassDefiner extends ClassLoader {
+	public static class ClassDefiner extends ClassLoader {
+		HashMap<String, Class<?>> loaded = new HashMap<>();
+		HashMap<String, byte[]> local = new HashMap<>();
 		public ClassDefiner(ClassLoader parent) {
 			super(parent);
 		}
 
+		public void predefine(String name, byte[] bytes) {
+			local.put(name, bytes);
+		}
+
 		public Class<?> get(String name, byte[] bytes) {
 			Class<?> c = defineClass(name, bytes, 0, bytes.length);
+			loaded.put(name, c);
 			resolveClass(c);
 			return c;
+		}
+
+		@Override
+		protected Class<?> findClass(String name) throws ClassNotFoundException {
+			if(local.containsKey(name)) {
+				return get(name, local.remove(name));
+			}
+			if (loaded.containsKey(name)) {
+				return loaded.get(name);
+			}
+			System.out.println(loaded.size());
+			return super.findClass(name);
 		}
 	}
 
 	/**
-	 * Class visitor that strips information from a class. Makes the class and
-	 * methods public.
+	 * Class visitor that strips information from a class. Makes the class and methods public.
 	 */
 	public static class VisitorImpl extends ClassVisitor {
 
