@@ -13,11 +13,9 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
-import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -29,8 +27,8 @@ import me.lpk.analysis.Sandbox.ClassDefiner;
 import me.nov.zelixkiller.JarArchive;
 import me.nov.zelixkiller.ZelixKiller;
 import me.nov.zelixkiller.transformer.Transformer;
+import me.nov.zelixkiller.transformer.zkm11.utils.ClinitCutter;
 import me.nov.zelixkiller.utils.ClassUtils;
-import me.nov.zelixkiller.utils.InsnUtils;
 import me.nov.zelixkiller.utils.IssueUtils;
 import me.nov.zelixkiller.utils.MethodUtils;
 import me.nov.zelixkiller.utils.analysis.ConstantTracker;
@@ -42,7 +40,7 @@ import me.nov.zelixkiller.utils.analysis.ConstantTracker.ConstantValue;
 public class StringObfuscationCipherT11 extends Transformer {
 
 	public int success = 0;
-	public int failure = 0;
+	public int failures = 0;
 
 	@Override
 	public boolean isAffected(ClassNode cn) {
@@ -75,14 +73,14 @@ public class StringObfuscationCipherT11 extends Transformer {
 		try {
 			proxy = createProxy(ja, cn, clinit, mathMethod);
 		} catch (Throwable t) {
-			failure++;
+			failures++;
 			// TODO fix Given final block not properly padded
 			return;
 		}
 		if (mathMethod != null) {
 			replaceInvokedynamicCalls(proxy, cn, mathMethod);
 		} else {
-			// TODO replace fields
+			// TODO replace fields and arrayloads (if exist)
 		}
 		// TODO remove
 		success++;
@@ -98,16 +96,19 @@ public class StringObfuscationCipherT11 extends Transformer {
 					if (ain.getOpcode() == GETSTATIC) {
 						FieldInsnNode fin = (FieldInsnNode) ain;
 						if (fin.owner.equals(cn.name) && fin.desc.equals("J")) {
+							// inline needed fields
 							try {
 								Field f = proxy.getDeclaredField(fin.name);
 								if (f != null && f.getType() == long.class) {
 									mn.instructions.set(fin, new LdcInsnNode((long) f.get(null)));
 								}
 							} catch (Exception e) {
-								e.printStackTrace();
+								ZelixKiller.logger.log(Level.FINE, "Exception at inlining field", e);
+								continue;
 							}
 						}
 					} else if (ain.getOpcode() == INVOKEDYNAMIC) {
+						// invokedynamic just invokes (String, long, int) method
 						InvokeDynamicInsnNode idyn = (InvokeDynamicInsnNode) ain;
 						if (idyn.desc.equals("(IJ)Ljava/lang/String;") && idyn.bsm != null && idyn.bsm.getOwner().equals(cn.name)
 								&& idyn.bsm.getDesc().equals(
@@ -160,19 +161,7 @@ public class StringObfuscationCipherT11 extends Transformer {
 
 	private Class<?> createProxy(JarArchive ja, ClassNode cn, MethodNode clinit, MethodNode mathMethod) {
 		// cut off rest of static initializer
-		AbstractInsnNode ret = InsnUtils.findFirst(clinit.instructions, RETURN);
-
-		// TODO better way to find cut by getting if_icmpge label
-		while (ret != null) {
-			if (ret.getNext() instanceof FrameNode && ret instanceof LabelNode
-					&& ((ret.getPrevious().getOpcode() == TABLESWITCH)
-							|| (ret.getPrevious().getOpcode() == GOTO && ret.getPrevious().getPrevious().getOpcode() == POP))) {
-				break;
-			}
-			ret = ret.getPrevious();
-		}
-		InsnList decryption = MethodUtils.copy(clinit.instructions, null, ret.getNext());
-		decryption.add(new InsnNode(RETURN));
+		InsnList decryption = ClinitCutter.cutClinit(clinit.instructions);
 		MethodNode emulationNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, "static_init", "()V", null, null);
 		emulationNode.instructions.add(decryption);
 		emulationNode.maxStack = 10;
@@ -258,10 +247,12 @@ public class StringObfuscationCipherT11 extends Transformer {
 			vm.predefine(decryptionClazz.name.replace("/", "."), cw2.toByteArray());
 		}
 		try {
+			IssueUtils.dump(new File("fault-proxy-du444mp.jar"), proxy);
 			clazz.getDeclaredMethod("static_init").invoke(null, (Object[]) null);
-		} catch (Throwable e) {
-			IssueUtils.dump(new File("fault-proxy-dump" + (System.currentTimeMillis() % 100) + ".jar"), proxy);
-			throw new RuntimeException("clinit DES decryption unsuccessful (invocation) at class " + clinit.owner, e);
+		} catch (Throwable t) {
+			IssueUtils.dump(new File("fault-proxy-dump" + ((t instanceof VerifyError) ? "-verify" : "")
+					+ (System.currentTimeMillis() % 100) + ".jar"), proxy);
+			throw new RuntimeException("clinit DES decryption unsuccessful (invocation) at class " + clinit.owner, t);
 		}
 
 		for (Field f : clazz.getDeclaredFields()) {
@@ -275,7 +266,6 @@ public class StringObfuscationCipherT11 extends Transformer {
 				throw new RuntimeException("field error", e);
 			}
 		}
-		IssueUtils.dump(new File("proxy-dump.jar"), proxy);
 		return clazz;
 	}
 
@@ -303,6 +293,6 @@ public class StringObfuscationCipherT11 extends Transformer {
 
 	@Override
 	public void postTransform() {
-		ZelixKiller.logger.log(Level.INFO, "Succeeded in " + success + " classes, failed in " + failure);
+		ZelixKiller.logger.log(Level.INFO, "Succeeded in " + success + " classes, failed in " + failures);
 	}
 }

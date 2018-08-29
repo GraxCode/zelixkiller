@@ -12,10 +12,8 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -28,6 +26,7 @@ import me.lpk.util.ASMUtils;
 import me.nov.zelixkiller.JarArchive;
 import me.nov.zelixkiller.ZelixKiller;
 import me.nov.zelixkiller.transformer.Transformer;
+import me.nov.zelixkiller.transformer.zkm11.utils.ClinitCutter;
 import me.nov.zelixkiller.utils.InsnUtils;
 import me.nov.zelixkiller.utils.IssueUtils;
 import me.nov.zelixkiller.utils.MethodUtils;
@@ -40,12 +39,14 @@ import me.nov.zelixkiller.utils.analysis.ConstantTracker.ConstantValue;
 public class StringObfuscationT11 extends Transformer {
 
 	private boolean invokedynamicWarn;
+
 	@Override
 	public boolean isAffected(ClassNode cn) {
-		if(cn.methods.isEmpty()) {
+		if (cn.methods.isEmpty()) {
 			return false;
 		}
-		MethodNode staticInitializer = cn.methods.stream().filter(mn -> mn.name.equals("<clinit>")).findFirst().orElse(null);
+		MethodNode staticInitializer = cn.methods.stream().filter(mn -> mn.name.equals("<clinit>")).findFirst()
+				.orElse(null);
 		return staticInitializer != null && containsEncryptedLDC(staticInitializer);
 	}
 
@@ -97,7 +98,6 @@ public class StringObfuscationT11 extends Transformer {
 			return;
 		}
 		boolean mathMethod = hasMathMethod(cn); // if false, strings are only used in static initializer itself or as single field
-
 		if (mathMethod) {
 			MethodNode mm = null;
 			// fix second method
@@ -118,6 +118,7 @@ public class StringObfuscationT11 extends Transformer {
 			Class<?> proxy = createProxy(mm, clinit);
 			fixMathMethod(mm, clinit, cn, proxy);
 		} else {
+			//TODO handle arrayloads (aggressive type)
 			Class<?> proxy = createProxy(null, clinit);
 			for (Field f : proxy.getDeclaredFields()) {
 				try {
@@ -144,18 +145,13 @@ public class StringObfuscationT11 extends Transformer {
 					e.printStackTrace();
 				}
 			}
-			// to finish everything, clean up class
-			AbstractInsnNode ret = InsnUtils.findFirst(clinit.instructions, RETURN);
-			while (ret != null) {
-				if (ret instanceof LabelNode && ((ret.getPrevious().getOpcode() == TABLESWITCH)
-						|| (ret.getPrevious().getOpcode() == GOTO && ret.getPrevious().getPrevious().getOpcode() == POP))) {
-					break;
-				}
-				ret = ret.getPrevious();
-			}
-			InsnList originalClinit = MethodUtils.copy(clinit.instructions, ret, null);
-			clinit.instructions.clear();
-			clinit.instructions.add(originalClinit);
+		}
+		// to finish everything, clean up clinit
+		InsnList originalClinit = MethodUtils.copy(clinit.instructions, ClinitCutter.findEndLabel(clinit.instructions), null);
+		clinit.instructions.clear();
+		clinit.instructions.add(originalClinit);
+		if(originalClinit.size() <= 3) {
+			cn.methods.remove(clinit);
 		}
 	}
 
@@ -169,16 +165,7 @@ public class StringObfuscationT11 extends Transformer {
 	 */
 	private Class<?> createProxy(MethodNode mathMethod, MethodNode clinit) {
 		// cut off rest of static initializer
-		AbstractInsnNode ret = InsnUtils.findFirst(clinit.instructions, RETURN);
-		while (ret != null) {
-			if (ret.getNext() instanceof FrameNode && ret instanceof LabelNode && ((ret.getPrevious().getOpcode() == TABLESWITCH)
-					|| (ret.getPrevious().getOpcode() == GOTO && ret.getPrevious().getPrevious().getOpcode() == POP))) {
-				break;
-			}
-			ret = ret.getPrevious();
-		}
-		InsnList decryption = MethodUtils.copy(clinit.instructions, null, ret.getNext());
-		decryption.add(new InsnNode(RETURN));
+		InsnList decryption = ClinitCutter.cutClinit(clinit.instructions);
 		MethodNode emulationNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, "static_init", "()V", null, null);
 		emulationNode.instructions.add(decryption);
 		emulationNode.maxStack = 10;
@@ -290,17 +277,6 @@ public class StringObfuscationT11 extends Transformer {
 			}
 		}
 		// to finish everything, clean up class
-		AbstractInsnNode ret = InsnUtils.findFirst(clinit.instructions, RETURN);
-		while (ret != null) {
-			if (ret instanceof LabelNode && ((ret.getPrevious().getOpcode() == TABLESWITCH)
-					|| (ret.getPrevious().getOpcode() == GOTO && ret.getPrevious().getPrevious().getOpcode() == POP))) {
-				break;
-			}
-			ret = ret.getPrevious();
-		}
-		InsnList originalClinit = MethodUtils.copy(clinit.instructions, ret, null);
-		clinit.instructions.clear();
-		clinit.instructions.add(originalClinit);
 		ArrayList<String> decryptionFields = new ArrayList<>();
 		for (Field f : proxy.getDeclaredFields()) {
 			decryptionFields.add(f.getName() + "." + Type.getDescriptor(f.getType()));
