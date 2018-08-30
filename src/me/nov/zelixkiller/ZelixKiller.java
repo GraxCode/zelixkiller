@@ -19,6 +19,7 @@ import org.objectweb.asm.tree.ClassNode;
 import me.lpk.util.JarUtils;
 import me.nov.zelixkiller.transformer.Transformer;
 import me.nov.zelixkiller.transformer.zkm.ExceptionObfuscationTX;
+import me.nov.zelixkiller.transformer.zkm11.ControlFlowT11;
 import me.nov.zelixkiller.transformer.zkm11.StringObfuscationCipherT11;
 import me.nov.zelixkiller.transformer.zkm11.StringObfuscationT11;
 
@@ -30,6 +31,7 @@ public class ZelixKiller {
 		System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tT] [%4$-7s] %5$s %n");
 		transformers.put("s11", StringObfuscationT11.class);
 		transformers.put("si11", StringObfuscationCipherT11.class);
+		transformers.put("cf11", ControlFlowT11.class);
 		transformers.put("ex", ExceptionObfuscationTX.class);
 	}
 

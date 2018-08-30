@@ -238,23 +238,22 @@ public class StringObfuscationT11 extends Transformer {
 	/**
 	 * Fixes all strings in code
 	 */
-	@SuppressWarnings("rawtypes")
 	private void fixMathMethod(MethodNode mathMethod, MethodNode clinit, ClassNode cn, Class<?> proxy) {
 		Analyzer<ConstantValue> a = new Analyzer<>(new ConstantTracker());
 		for (MethodNode mn : cn.methods) {
 			try {
 				a.analyze(cn.name, mn);
-				Frame[] frames = a.getFrames();
+				Frame<ConstantValue>[] frames = a.getFrames();
 				int nIdx = 0;
 				for (AbstractInsnNode ain : mn.instructions.toArray()) {
 					if (ain.getOpcode() == INVOKESTATIC) {
 						MethodInsnNode min = (MethodInsnNode) ain;
 						if (min.owner.equals(cn.name) && min.name.equals(mathMethod.name) && min.desc.equals(mathMethod.desc)) {
-							Frame frame = frames[nIdx];
+							Frame<ConstantValue> frame = frames[nIdx];
 							int j = 0;
 							int[] args2 = new int[3];
 							for (int i = frame.getStackSize() - 1; i > frame.getStackSize() - 4; i--) {
-								ConstantValue v = (ConstantValue) frame.getStack(i);
+								ConstantValue v = frame.getStack(i);
 								args2[j++] = (int) v.getValue();
 							}
 							try {

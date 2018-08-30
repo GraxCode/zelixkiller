@@ -86,7 +86,6 @@ public class StringObfuscationCipherT11 extends Transformer {
 		success++;
 	}
 
-	@SuppressWarnings("rawtypes")
 	private void replaceInvokedynamicCalls(Class<?> proxy, ClassNode cn, MethodNode mathMethod) {
 		for (MethodNode mn : cn.methods) {
 			try {
@@ -115,12 +114,12 @@ public class StringObfuscationCipherT11 extends Transformer {
 										"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")) {
 							Analyzer<ConstantValue> a = new Analyzer<>(new ConstantTracker());
 							a.analyze(cn.name, mn);
-							Frame[] frames = a.getFrames();
-							Frame frame = frames[nIdx];
+							Frame<ConstantValue>[] frames = a.getFrames();
+							Frame<ConstantValue> frame = frames[nIdx];
 							int j = 0;
 							Object[] args = new Object[2];
 							for (int i = frame.getStackSize() - 1; i > frame.getStackSize() - 3; i--) {
-								ConstantValue v = (ConstantValue) frame.getStack(i);
+								ConstantValue v = frame.getStack(i);
 								if (v != null)
 									args[j++] = v.getValue();
 							}
