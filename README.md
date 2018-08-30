@@ -23,9 +23,9 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 
 | Transformer | Short Version | Description |
 | --- | --- | --- |
-| ~~String Obfuscation~~ | s8 (?) | Deobfuscates (enhanced) string obfuscation |
+| ~~String Obfuscation~~ | s8 (*) | Deobfuscates (enhanced) string obfuscation |
 | ~~Reference Obfuscation~~ | r8 | Deobfuscates reflection obfuscation |
-| ~~Control Flow Obfuscation~~ | cf8 (?) | Deobfuscates flow and exception obfuscation |
+| ~~Control Flow Obfuscation~~ | cf8 (*) | Deobfuscates flow and exception obfuscation |
 ### ZKM General
 
 | Transformer | Short Version | Description |
@@ -34,7 +34,7 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 
    
    
-Transformers marked with a question mark may also work using transformers with more recent versions. 
+Transformers marked with a star may also work using transformers intended for more recent versions. 
 Crossed out means that the transformer is not implemented yet.
 ## Libraries needed
 commons-io 2.6, commons-cli 1.4, asm 6+
