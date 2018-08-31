@@ -73,6 +73,7 @@ public class StringObfuscationCipherT11 extends Transformer {
 		try {
 			proxy = createProxy(ja, cn, clinit, mathMethod);
 		} catch (Throwable t) {
+			ZelixKiller.logger.log(Level.SEVERE, "Proxy exception at " + cn.name, t);
 			failures++;
 			// TODO fix Given final block not properly padded
 			return;
@@ -102,7 +103,7 @@ public class StringObfuscationCipherT11 extends Transformer {
 									mn.instructions.set(fin, new LdcInsnNode((long) f.get(null)));
 								}
 							} catch (Exception e) {
-								ZelixKiller.logger.log(Level.FINE, "Exception at inlining field", e);
+								ZelixKiller.logger.log(Level.SEVERE, "Exception at inlining field", e);
 								continue;
 							}
 						}

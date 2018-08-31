@@ -377,7 +377,6 @@ public class Sandbox {
 			if (loaded.containsKey(name)) {
 				return loaded.get(name);
 			}
-			System.out.println(loaded.size());
 			return super.findClass(name);
 		}
 	}

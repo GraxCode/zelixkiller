@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,7 +30,7 @@ public class ZelixKiller {
 	private final static HashMap<String, Class<? extends Transformer>> transformers = new HashMap<>();
 
 	static {
-		System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tT] [%4$-7s] %5$s %n");
+		System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tT] [%4$-7s] %5$s %6$s%n");
 		transformers.put("s11", StringObfuscationT11.class);
 		transformers.put("si11", StringObfuscationCipherT11.class);
 		transformers.put("cf11", ControlFlowT11.class);
@@ -40,7 +42,8 @@ public class ZelixKiller {
 		options.addOption("i", "input", true, "The obfuscated input file to use");
 		options.addOption("o", "output", true, "The output file");
 		options.addOption("t", "transformer", true, "The transformer to use");
-		options.addOption("help", false, "Prints this help");
+		options.addOption("v", "verbose", false, "Turn on verbose mode");
+		options.addOption("?", "help", false, "Prints this help");
 
 		CommandLineParser parser = new DefaultParser();
 		CommandLine line;
@@ -54,6 +57,14 @@ public class ZelixKiller {
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp("zelixkiller 11", options);
 			return;
+		}
+		if (line.hasOption("v")) {
+			Handler handler = new ConsoleHandler();
+			handler.setLevel(Level.ALL);
+			logger.addHandler(handler);
+			logger.setLevel(Level.ALL);
+			logger.setUseParentHandlers(false);
+			Logger.getLogger("").setLevel(Level.OFF);
 		}
 		File input = new File(line.getOptionValue("i"));
 		File output = new File(line.getOptionValue("o"));

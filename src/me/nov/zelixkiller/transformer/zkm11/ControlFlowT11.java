@@ -72,7 +72,6 @@ public class ControlFlowT11 extends Transformer {
 							if(zero) {
 								mn.instructions.set(ain, new InsnNode(POP));
 							} else {
-								System.out.println(cn.name + mn.name);
 								mn.instructions.insertBefore(ain, new InsnNode(POP));
 								mn.instructions.set(ain, new JumpInsnNode(GOTO, ((JumpInsnNode)ain).label));
 							}
