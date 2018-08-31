@@ -75,7 +75,7 @@ public class StringObfuscationCipherT11 extends Transformer {
 		} catch (Throwable t) {
 			ZelixKiller.logger.log(Level.SEVERE, "Proxy exception at " + cn.name, t);
 			failures++;
-			// TODO fix Given final block not properly padded
+			// TODO fix Given final block not properly padded (= wrong key) (every class throwing that error has a super / itf class)
 			return;
 		}
 		if (mathMethod != null) {
@@ -247,7 +247,6 @@ public class StringObfuscationCipherT11 extends Transformer {
 			vm.predefine(decryptionClazz.name.replace("/", "."), cw2.toByteArray());
 		}
 		try {
-			IssueUtils.dump(new File("fault-proxy-du444mp.jar"), proxy);
 			clazz.getDeclaredMethod("static_init").invoke(null, (Object[]) null);
 		} catch (Throwable t) {
 			IssueUtils.dump(new File("fault-proxy-dump" + ((t instanceof VerifyError) ? "-verify" : "")

@@ -354,12 +354,14 @@ public class Sandbox {
 	public static class ClassDefiner extends ClassLoader {
 		HashMap<String, Class<?>> loaded = new HashMap<>();
 		HashMap<String, byte[]> local = new HashMap<>();
+
 		public ClassDefiner(ClassLoader parent) {
 			super(parent);
 		}
 
 		public void predefine(String name, byte[] bytes) {
-			local.put(name, bytes);
+			if (!local.containsKey(name) && !loaded.containsKey(name))
+				local.put(name, bytes);
 		}
 
 		public Class<?> get(String name, byte[] bytes) {
@@ -371,7 +373,7 @@ public class Sandbox {
 
 		@Override
 		protected Class<?> findClass(String name) throws ClassNotFoundException {
-			if(local.containsKey(name)) {
+			if (local.containsKey(name)) {
 				return get(name, local.remove(name));
 			}
 			if (loaded.containsKey(name)) {

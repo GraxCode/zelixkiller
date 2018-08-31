@@ -53,6 +53,7 @@ public class ClinitCutter implements Opcodes {
 			}
 			ain = ain.getNext();
 		}
+		//if this fails it must be a class with only string fields
 		throw new RuntimeException();
 	}
 }
