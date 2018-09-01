@@ -47,8 +47,15 @@ public class ClinitCutter implements Opcodes {
 	public static AbstractInsnNode findEndLabel(InsnList insns) {
 		AbstractInsnNode ain = insns.getLast();
 		while (ain != null) {
-			if (ain.getOpcode() == GOTO && ain.getPrevious() != null
-					&& (ain.getPrevious().getOpcode() == PUTSTATIC || ain.getPrevious().getOpcode() == ASTORE || ain.getPrevious().getOpcode() == ISTORE)) {
+			if (ain.getOpcode() == GOTO && ain.getPrevious() != null && (ain.getPrevious().getOpcode() == PUTSTATIC
+					|| ain.getPrevious().getOpcode() == ASTORE)) {
+				return ((JumpInsnNode) ain).label;
+			}
+			ain = ain.getPrevious();
+		}
+		ain = insns.getLast();
+		while (ain != null) {
+			if (ain.getOpcode() == IF_ICMPGE && ain.getPrevious() != null && (ain.getPrevious().getOpcode() == ILOAD)) {
 				return ((JumpInsnNode) ain).label;
 			}
 			ain = ain.getPrevious();

@@ -381,6 +381,17 @@ public class Sandbox {
 			}
 			return super.findClass(name);
 		}
+		
+		@Override
+		public Class<?> loadClass(String name) throws ClassNotFoundException {
+			if (local.containsKey(name)) {
+				return get(name, local.remove(name));
+			}
+			if (loaded.containsKey(name)) {
+				return loaded.get(name);
+			}
+			return super.loadClass(name);
+		}
 	}
 
 	/**
