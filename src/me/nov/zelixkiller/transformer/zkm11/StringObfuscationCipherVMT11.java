@@ -1,6 +1,5 @@
 package me.nov.zelixkiller.transformer.zkm11;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import me.nov.zelixkiller.ZelixKiller;
 import me.nov.zelixkiller.transformer.Transformer;
 import me.nov.zelixkiller.transformer.zkm11.utils.ClinitCutter;
 import me.nov.zelixkiller.utils.ClassUtils;
-import me.nov.zelixkiller.utils.IssueUtils;
 import me.nov.zelixkiller.utils.MethodUtils;
 import me.nov.zelixkiller.utils.analysis.ConstantTracker;
 import me.nov.zelixkiller.utils.analysis.ConstantTracker.ConstantValue;
@@ -106,7 +104,6 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 					if (ain instanceof MethodInsnNode) {
 						MethodInsnNode min = (MethodInsnNode) ain;
 						if (min.desc.startsWith("(JJLjava/lang/Object;)L")) {
-							System.out.println(map.get(min.owner).name);
 							for (MethodNode mn : map.get(min.owner).methods) {
 								for (ClassNode decl : findBelongingClasses(new ArrayList<>(), mn, map)) {
 									if (!dc.contains(decl))
@@ -166,9 +163,6 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 				newclinit.instructions.add(decryption);
 				newclinit.maxStack = 10;
 				newclinit.maxLocals = 20;
-				if (cn.name.contains("mxRes")) {
-					System.out.println(newclinit.instructions.getLast().getOpcode());
-				}
 				proxy.methods.add(newclinit);
 				ArrayList<String> neededClassContents = findNeededContents(cn, newclinit);
 				for (FieldNode fn : cn.fields) {
@@ -185,7 +179,6 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 
 			}
 		}
-		IssueUtils.dump(new File("ds-proxy-dump" + cn.name.replace("/", ".") + ".jar"), proxy);
 		return proxy;
 	}
 
