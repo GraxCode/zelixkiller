@@ -372,7 +372,7 @@ public class Sandbox {
 		}
 
 		@Override
-		protected Class<?> findClass(String name) throws ClassNotFoundException {
+		public Class<?> findClass(String name) throws ClassNotFoundException {
 			if (local.containsKey(name)) {
 				return get(name, local.remove(name));
 			}

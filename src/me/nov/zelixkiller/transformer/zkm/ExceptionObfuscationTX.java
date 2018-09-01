@@ -32,21 +32,21 @@ public class ExceptionObfuscationTX extends Transformer {
 
 	private void check(ClassNode cn, MethodNode mn, TryCatchBlockNode tcb, LabelNode handler) {
 		AbstractInsnNode ain = handler;
-		while (ain.getOpcode() == -1) { //skip labels and frames
+		while (ain.getOpcode() == -1) { // skip labels and frames
 			ain = ain.getNext();
 		}
-		if(ain.getOpcode() == ATHROW) {
+		if (ain.getOpcode() == ATHROW) {
 			removeTCB(mn, tcb);
-		} else if(ain instanceof MethodInsnNode && ain.getNext().getOpcode() == ATHROW) {
+		} else if (ain instanceof MethodInsnNode && ain.getNext().getOpcode() == ATHROW) {
 			MethodInsnNode min = (MethodInsnNode) ain;
-			if(min.owner.equals(cn.name)) {
+			if (min.owner.equals(cn.name)) {
 				MethodNode getter = ClassUtils.getMethod(cn, min.name, min.desc);
 				AbstractInsnNode getterFirst = getter.instructions.getFirst();
 				while (getterFirst.getOpcode() == -1) {
 					getterFirst = ain.getNext();
 				}
-				if(getterFirst instanceof VarInsnNode && getterFirst.getNext().getOpcode() == ARETURN) {
-					if(((VarInsnNode)getterFirst).var == 0) {
+				if (getterFirst instanceof VarInsnNode && getterFirst.getNext().getOpcode() == ARETURN) {
+					if (((VarInsnNode) getterFirst).var == 0) {
 						removeTCB(mn, tcb);
 					}
 				}
@@ -57,6 +57,10 @@ public class ExceptionObfuscationTX extends Transformer {
 	private void removeTCB(MethodNode mn, TryCatchBlockNode tcb) {
 		removed++;
 		mn.tryCatchBlocks.remove(tcb);
+	}
+
+	@Override
+	public void preTransform(JarArchive ja) {
 	}
 
 	@Override

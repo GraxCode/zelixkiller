@@ -60,20 +60,20 @@ public class ControlFlowT11 extends Transformer {
 				if (op == IFEQ || op == IFNE) {
 					ConstantValue v = frame.getStack(frame.getStackSize() - 1);
 					if (v.getValue() != null) {
-						boolean zero = (int)v.getValue() == 0;
+						boolean zero = (int) v.getValue() == 0;
 						if (op == IFEQ) {
-							if(!zero) {
+							if (!zero) {
 								mn.instructions.set(ain, new InsnNode(POP));
 							} else {
 								mn.instructions.insertBefore(ain, new InsnNode(POP));
-								mn.instructions.set(ain, new JumpInsnNode(GOTO, ((JumpInsnNode)ain).label));
+								mn.instructions.set(ain, new JumpInsnNode(GOTO, ((JumpInsnNode) ain).label));
 							}
 						} else {
-							if(zero) {
+							if (zero) {
 								mn.instructions.set(ain, new InsnNode(POP));
 							} else {
 								mn.instructions.insertBefore(ain, new InsnNode(POP));
-								mn.instructions.set(ain, new JumpInsnNode(GOTO, ((JumpInsnNode)ain).label));
+								mn.instructions.set(ain, new JumpInsnNode(GOTO, ((JumpInsnNode) ain).label));
 							}
 						}
 						jumps++;
@@ -102,6 +102,10 @@ public class ControlFlowT11 extends Transformer {
 			ain = ain.getNext();
 		}
 		return null;
+	}
+
+	@Override
+	public void preTransform(JarArchive ja) {
 	}
 
 	@Override

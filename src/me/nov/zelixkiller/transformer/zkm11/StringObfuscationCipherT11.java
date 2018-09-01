@@ -35,8 +35,10 @@ import me.nov.zelixkiller.utils.analysis.ConstantTracker;
 import me.nov.zelixkiller.utils.analysis.ConstantTracker.ConstantValue;
 
 /**
- * ZKM String Obfuscation technique that uses DES
+ * Decrypts ZKM String Obfuscation technique that uses DES
+ * doesn't always work
  */
+@Deprecated
 public class StringObfuscationCipherT11 extends Transformer {
 
 	public int success = 0;
@@ -288,6 +290,10 @@ public class StringObfuscationCipherT11 extends Transformer {
 				}
 			}
 		}
+	}
+
+	@Override
+	public void preTransform(JarArchive ja) {
 	}
 
 	@Override

@@ -23,6 +23,7 @@ import me.nov.zelixkiller.transformer.Transformer;
 import me.nov.zelixkiller.transformer.zkm.ExceptionObfuscationTX;
 import me.nov.zelixkiller.transformer.zkm11.ControlFlowT11;
 import me.nov.zelixkiller.transformer.zkm11.StringObfuscationCipherT11;
+import me.nov.zelixkiller.transformer.zkm11.StringObfuscationCipherVMT11;
 import me.nov.zelixkiller.transformer.zkm11.StringObfuscationT11;
 
 public class ZelixKiller {
@@ -33,6 +34,7 @@ public class ZelixKiller {
 		System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tT] [%4$-7s] %5$s %6$s%n");
 		transformers.put("s11", StringObfuscationT11.class);
 		transformers.put("si11", StringObfuscationCipherT11.class);
+		transformers.put("sivm11", StringObfuscationCipherVMT11.class);
 		transformers.put("cf11", ControlFlowT11.class);
 		transformers.put("ex", ExceptionObfuscationTX.class);
 	}
@@ -86,11 +88,18 @@ public class ZelixKiller {
 			formatter.printHelp("zelixkiller 11", options);
 			return;
 		}
-		Transformer t = transformers.get(transf).newInstance();
+		Class<? extends Transformer> tClass = transformers.get(transf);
+		Transformer t = tClass.newInstance();
+		if(tClass.getAnnotations().length > 0) {
+			if(tClass.getAnnotations()[0].annotationType().getName().equals("java.lang.Deprecated")) {
+				logger.log(Level.WARNING, "Transformer " + t.getClass().getSimpleName() + " is deprecated");
+			}
+		}
 		Map<String, ClassNode> classes = JarUtils.loadClasses(input);
 		Map<String, byte[]> out = JarUtils.loadNonClassEntries(input);
 		JarArchive ja = new JarArchive(input, classes, out);
 		logger.log(Level.INFO, "Starting with deobfuscation using transformer " + t.getClass().getSimpleName());
+		t.preTransform(ja);
 		for (ClassNode cn : new ArrayList<>(classes.values())) {
 			if (t.isAffected(cn)) {
 				t.transform(ja, cn);

@@ -118,7 +118,7 @@ public class StringObfuscationT11 extends Transformer {
 			Class<?> proxy = createProxy(mm, clinit);
 			fixMathMethod(mm, clinit, cn, proxy);
 		} else {
-			//TODO handle arrayloads (aggressive type)
+			// TODO handle arrayloads (aggressive type)
 			Class<?> proxy = createProxy(null, clinit);
 			for (Field f : proxy.getDeclaredFields()) {
 				try {
@@ -147,12 +147,17 @@ public class StringObfuscationT11 extends Transformer {
 			}
 		}
 		// to finish everything, clean up clinit
-		InsnList originalClinit = MethodUtils.copy(clinit.instructions, ClinitCutter.findEndLabel(clinit.instructions), null);
+		InsnList originalClinit = MethodUtils.copy(clinit.instructions, ClinitCutter.findEndLabel(clinit.instructions),
+				null);
 		clinit.instructions.clear();
 		clinit.instructions.add(originalClinit);
-		if(originalClinit.size() <= 3) {
+		if (originalClinit.size() <= 3) {
 			cn.methods.remove(clinit);
 		}
+	}
+
+	@Override
+	public void preTransform(JarArchive ja) {
 	}
 
 	@Override

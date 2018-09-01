@@ -45,15 +45,14 @@ public class ClinitCutter implements Opcodes {
 	}
 
 	public static AbstractInsnNode findEndLabel(InsnList insns) {
-		AbstractInsnNode ain = insns.getFirst();
+		AbstractInsnNode ain = insns.getLast();
 		while (ain != null) {
 			if (ain.getOpcode() == GOTO && ain.getPrevious() != null
-					&& (ain.getPrevious().getOpcode() == PUTSTATIC || ain.getPrevious().getOpcode() == ASTORE)) {
+					&& (ain.getPrevious().getOpcode() == PUTSTATIC || ain.getPrevious().getOpcode() == ASTORE || ain.getPrevious().getOpcode() == ISTORE)) {
 				return ((JumpInsnNode) ain).label;
 			}
-			ain = ain.getNext();
+			ain = ain.getPrevious();
 		}
-		//if this fails it must be a class with only string fields
 		throw new RuntimeException();
 	}
 }
