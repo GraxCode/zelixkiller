@@ -1,5 +1,6 @@
 package me.nov.zelixkiller.transformer.zkm11;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,20 +26,20 @@ import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
 
 import me.lpk.analysis.Sandbox.ClassDefiner;
+import me.lpk.util.ASMUtils;
 import me.nov.zelixkiller.JarArchive;
 import me.nov.zelixkiller.ZelixKiller;
 import me.nov.zelixkiller.transformer.Transformer;
 import me.nov.zelixkiller.transformer.zkm11.utils.ClinitCutter;
 import me.nov.zelixkiller.utils.ClassUtils;
+import me.nov.zelixkiller.utils.IssueUtils;
 import me.nov.zelixkiller.utils.MethodUtils;
 import me.nov.zelixkiller.utils.analysis.ConstantTracker;
 import me.nov.zelixkiller.utils.analysis.ConstantTracker.ConstantValue;
-import sun.misc.Unsafe;
 
 /**
  * Decrypts ZKM String Obfuscation technique that uses DES Creates a VM and deobfuscates by invoking static initializer
  */
-@SuppressWarnings("restriction")
 public class StringObfuscationCipherVMT11 extends Transformer {
 
 	public int success = 0;
@@ -55,12 +56,12 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 
 	@Override
 	public void preTransform(JarArchive ja) {
-		ClassDefiner vm = new ClassDefiner(ClassLoader.getSystemClassLoader());
 		ArrayList<ClassNode> dc = findDecryptionClasses(ja.getClasses());
+		HashMap<ClassNode, byte[]> isolatedJarCopy = new HashMap<>();
 		for (ClassNode cn : dc) {
 			ClassWriter cw2 = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 			cn.accept(cw2);
-			vm.predefine(cn.name.replace("/", "."), cw2.toByteArray());
+			isolatedJarCopy.put(cn, cw2.toByteArray());
 		}
 		for (ClassNode cn : ja.getClasses().values()) {
 			if (dc.contains(cn))
@@ -68,33 +69,29 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 			ClassNode proxy = createProxy(cn);
 			ClassWriter cw2 = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 			proxy.accept(cw2);
-			vm.predefine(proxy.name.replace("/", "."), cw2.toByteArray());
+			isolatedJarCopy.put(cn, cw2.toByteArray());
 		}
-		Unsafe unsafe = getUnsafe();
 		for (ClassNode cn : ja.getClasses().values()) {
 			try {
-				Class<?> clazz = vm.findClass(cn.name.replace("/", "."));
-				unsafe.ensureClassInitialized(clazz);
+				ClassDefiner vm = new ClassDefiner(ClassLoader.getSystemClassLoader());
+				for (Entry<ClassNode, byte[]> e : isolatedJarCopy.entrySet()) {
+					vm.predefine(e.getKey().name.replace("/", "."), e.getValue());
+				}
+				Class<?> clazz = Class.forName(cn.name.replace("/", "."), true, vm); // vm.loadClass(cn.name.replace("/", "."));
 				replaceInvokedynamicCalls(clazz, cn);
 				success++;
 			} catch (Throwable t) {
-				ZelixKiller.logger.log(Level.SEVERE, "Exception at loading proxy " + cn.name, t);
+				if (t instanceof VerifyError) {
+					ZelixKiller.logger.log(Level.SEVERE, "Verify exception at loading proxy " + cn.name, t);
+					IssueUtils.dump(new File("proxy-dump-verify-error.jar"), ASMUtils.getNode(isolatedJarCopy.get(cn)));
+				} else
+					ZelixKiller.logger.log(Level.SEVERE, "Exception at loading proxy " + cn.name, t);
 				failures++;
 			}
 		}
 	}
 
-	private static Unsafe getUnsafe() {
-		try {
-
-			Field singleoneInstanceField = Unsafe.class.getDeclaredField("theUnsafe");
-			singleoneInstanceField.setAccessible(true);
-			return (Unsafe) singleoneInstanceField.get(null);
-		} catch (Throwable e) {
-			return null;
-		}
-	}
-
+	@SuppressWarnings("deprecation")
 	private ArrayList<ClassNode> findDecryptionClasses(Map<String, ClassNode> map) {
 		ArrayList<ClassNode> dc = new ArrayList<>();
 		Outer: for (ClassNode cn : map.values()) {
@@ -147,6 +144,8 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 		return list;
 	}
 
+	private static final boolean debugClassInit = false;
+
 	@SuppressWarnings("deprecation")
 	private ClassNode createProxy(ClassNode cn) {
 		ClassNode proxy = new ClassNode();
@@ -158,8 +157,15 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 		MethodNode clinit = cn.methods.stream().filter(mn -> mn.name.equals("<clinit>")).findFirst().orElse(null);
 		if (clinit != null && StringObfuscationCipherT11.containsDESPadLDC(clinit)) {
 			try {
-				InsnList decryption = ClinitCutter.cutClinit(clinit.instructions);
+				InsnList decryption = ClinitCutter.cutClinit(clinit);
+				 removeUnwantedCalls(decryption);
 				MethodNode newclinit = new MethodNode(ACC_STATIC, "<clinit>", "()V", null, null);
+				if (debugClassInit) {
+					decryption
+							.insert(new MethodInsnNode(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V"));
+					decryption.insert(new LdcInsnNode(cn.name));
+					decryption.insert(new FieldInsnNode(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;"));
+				}
 				newclinit.instructions.add(decryption);
 				newclinit.maxStack = 10;
 				newclinit.maxLocals = 20;
@@ -170,16 +176,44 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 						proxy.fields.add(new FieldNode(fn.access, fn.name, fn.desc, fn.signature, fn.value));
 				}
 				for (MethodNode mn : cn.methods) {
-					if (neededClassContents.contains(mn.name + mn.desc)) {
-						proxy.methods.add(MethodUtils.cloneInstructions(mn));
-					}
+					if (neededClassContents.contains(mn.name + mn.desc) || isInvokedynamicMethod(mn))
+						proxy.methods.add(MethodUtils.cloneInstructions(mn,
+								mn.name.startsWith("<") ? mn.name.replace("<", "___").replace(">", "___") : null));
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 
 			}
+		} else if (debugClassInit) {
+			InsnList decryption = new InsnList();
+			MethodNode newclinit = new MethodNode(ACC_STATIC, "<clinit>", "()V", null, null);
+			decryption.insert(new MethodInsnNode(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V"));
+			decryption.insert(new LdcInsnNode(cn.name));
+			decryption.insert(new FieldInsnNode(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;"));
+			decryption.add(new InsnNode(RETURN));
+			newclinit.instructions.add(decryption);
+			proxy.methods.add(newclinit);
 		}
 		return proxy;
+	}
+
+	private void removeUnwantedCalls(InsnList decryption) {
+		// TODO remove unwanted methodinsnnodes
+		for (AbstractInsnNode ain : decryption.toArray()) {
+			if (ain.getOpcode() == INVOKEDYNAMIC) {
+				InvokeDynamicInsnNode idin = (InvokeDynamicInsnNode) ain;
+				if (idin.desc.equals("(IJ)Ljava/lang/String;")) {
+					decryption.insertBefore(idin, new InsnNode(POP2));
+					decryption.insert(idin, new LdcInsnNode("<clinit> decryption invokedynamic string undecrypted"));
+					decryption.set(idin, new InsnNode(POP));
+				}
+			}
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	private boolean isInvokedynamicMethod(MethodNode mn) {
+		return mn.desc.equals("(IJ)Ljava/lang/String;") && StringObfuscationCipherT11.containsDESPadLDC(mn);
 	}
 
 	private ArrayList<String> findNeededContents(ClassNode cn, MethodNode mn) {
@@ -241,8 +275,8 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 									args[j++] = v.getValue();
 							}
 							for (Method m : proxy.getDeclaredMethods()) {
-								if (m.getReturnType() == String.class && m.getParameterTypes()[0] == int.class
-										&& m.getParameterTypes()[1] == long.class) {
+								if (m.getReturnType() == String.class && m.getParameterTypes().length == 2
+										&& m.getParameterTypes()[0] == int.class && m.getParameterTypes()[1] == long.class) {
 									try {
 										m.setAccessible(true);
 										String decrypted = (String) m.invoke(null, args[1], args[0]);

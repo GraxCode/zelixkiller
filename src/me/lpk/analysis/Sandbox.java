@@ -2,6 +2,7 @@ package me.lpk.analysis;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -360,38 +361,39 @@ public class Sandbox {
 		}
 
 		public void predefine(String name, byte[] bytes) {
-			if (!local.containsKey(name) && !loaded.containsKey(name))
+			if (!local.containsKey(name))
 				local.put(name, bytes);
 		}
 
 		public Class<?> get(String name, byte[] bytes) {
+			if (loaded.containsKey(name))
+				throw new RuntimeException();
+			try {
+				Method define = ClassLoader.class.getDeclaredMethod("defineClass0", String.class, byte[].class, int.class,
+						int.class, ProtectionDomain.class);
+				define.setAccessible(true);
+				Class<?> c = (Class<?>) define.invoke(this, name, bytes, 0, bytes.length, null);
+				resolveClass(c);
+				return c;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			Class<?> c = defineClass(name, bytes, 0, bytes.length);
-			loaded.put(name, c);
 			resolveClass(c);
 			return c;
 		}
 
 		@Override
-		public Class<?> findClass(String name) throws ClassNotFoundException {
-			if (local.containsKey(name)) {
-				return get(name, local.remove(name));
-			}
+		protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 			if (loaded.containsKey(name)) {
 				return loaded.get(name);
 			}
-			return super.findClass(name);
-		}
-		
-		@Override
-		public Class<?> loadClass(String name) throws ClassNotFoundException {
 			if (local.containsKey(name)) {
 				return get(name, local.remove(name));
 			}
-			if (loaded.containsKey(name)) {
-				return loaded.get(name);
-			}
-			return super.loadClass(name);
+			return super.loadClass(name, resolve);
 		}
+
 	}
 
 	/**

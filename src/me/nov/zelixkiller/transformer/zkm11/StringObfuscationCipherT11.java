@@ -163,7 +163,7 @@ public class StringObfuscationCipherT11 extends Transformer {
 
 	private Class<?> createProxy(JarArchive ja, ClassNode cn, MethodNode clinit, MethodNode mathMethod) {
 		// cut off rest of static initializer
-		InsnList decryption = ClinitCutter.cutClinit(clinit.instructions);
+		InsnList decryption = ClinitCutter.cutClinit(clinit);
 		MethodNode emulationNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, "static_init", "()V", null, null);
 		emulationNode.instructions.add(decryption);
 		emulationNode.maxStack = 10;
@@ -195,7 +195,7 @@ public class StringObfuscationCipherT11 extends Transformer {
 					min.owner = proxy.name;
 					// we do not need to check this method
 					if (ClassUtils.getMethod(proxy, min.name, min.desc) == null && !min.name.startsWith("<")) {
-						proxy.methods.add(MethodUtils.cloneInstructions(ClassUtils.getMethod(cn, min.name, min.desc)));
+						proxy.methods.add(MethodUtils.cloneInstructions(ClassUtils.getMethod(cn, min.name, min.desc), null));
 					}
 				}
 			}
@@ -203,7 +203,7 @@ public class StringObfuscationCipherT11 extends Transformer {
 		findBelongingClasses(new ArrayList<>(), decryptionClasses, ja, cn, proxy, emulationNode);
 		proxy.methods.add(emulationNode);
 		if (mathMethod != null) {
-			MethodNode mathMethodClone = MethodUtils.cloneInstructions(mathMethod);
+			MethodNode mathMethodClone = MethodUtils.cloneInstructions(mathMethod, null);
 			for (AbstractInsnNode ain : mathMethodClone.instructions.toArray()) {
 				if (ain instanceof FieldInsnNode) {
 					FieldInsnNode fin = (FieldInsnNode) ain;
@@ -222,7 +222,7 @@ public class StringObfuscationCipherT11 extends Transformer {
 						min.owner = proxy.name;
 						// we do not need to check this method
 						if (ClassUtils.getMethod(proxy, min.name, min.desc) == null && !min.name.startsWith("<")) {
-							proxy.methods.add(MethodUtils.cloneInstructions(ClassUtils.getMethod(cn, min.name, min.desc)));
+							proxy.methods.add(MethodUtils.cloneInstructions(ClassUtils.getMethod(cn, min.name, min.desc), null));
 						}
 					}
 				}

@@ -170,7 +170,7 @@ public class StringObfuscationT11 extends Transformer {
 	 */
 	private Class<?> createProxy(MethodNode mathMethod, MethodNode clinit) {
 		// cut off rest of static initializer
-		InsnList decryption = ClinitCutter.cutClinit(clinit.instructions);
+		InsnList decryption = ClinitCutter.cutClinit(clinit);
 		MethodNode emulationNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, "static_init", "()V", null, null);
 		emulationNode.instructions.add(decryption);
 		emulationNode.maxStack = 10;

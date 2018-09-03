@@ -38,10 +38,10 @@ public class MethodUtils {
 		return newList;
 	}
 
-	public static MethodNode cloneInstructions(MethodNode method) {
-		MethodNode mn = new MethodNode(method.access, method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
+	public static MethodNode cloneInstructions(MethodNode method, String newName) {
+		MethodNode mn = new MethodNode(method.access, newName != null ? newName : method.name, method.desc,
+				method.signature, method.exceptions.toArray(new String[0]));
 		mn.instructions.add(copy(method.instructions, null, null));
-		mn.localVariables.clear();
 		mn.maxLocals = method.maxLocals;
 		mn.maxStack = method.maxStack;
 		return mn;
