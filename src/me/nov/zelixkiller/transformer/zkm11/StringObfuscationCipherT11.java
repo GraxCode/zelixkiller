@@ -294,6 +294,7 @@ public class StringObfuscationCipherT11 extends Transformer {
 
 	@Override
 	public void preTransform(JarArchive ja) {
+		ZelixKiller.logger.log(Level.WARNING, "You're using a transformer that only supports invokedynamic decryption and doesn't support nested classes");
 	}
 
 	@Override

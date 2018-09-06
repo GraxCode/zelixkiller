@@ -284,6 +284,13 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 	}
 
 	private void replaceInvokedynamicCalls(Class<?> proxy, ClassNode cn) {
+		ArrayList<Field> singleFields = new ArrayList<>();
+		for (Field f : proxy.getDeclaredFields()) {
+			if (f.getType() == String.class) {
+				f.setAccessible(true);
+				singleFields.add(f);
+			}
+		}
 		for (MethodNode mn : cn.methods) {
 			try {
 				HashMap<AbstractInsnNode, String> decryptedStringMap = new HashMap<>();
@@ -301,6 +308,19 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 								}
 							} catch (Exception e) {
 								ZelixKiller.logger.log(Level.SEVERE, "Exception at inlining field", e);
+								continue;
+							}
+						} else if (fin.owner.equals(cn.name) && fin.desc.equals("Ljava/lang/String;")) {
+							try {
+								for (Field f : singleFields) {
+									if (fin.name.equals(f.getName())) {
+										String val = (String) f.get(null);
+										if (val != null)
+											mn.instructions.set(fin, new LdcInsnNode(val));
+									}
+								}
+							} catch (Exception e) {
+								ZelixKiller.logger.log(Level.SEVERE, "Exception at inlining single field", e);
 								continue;
 							}
 						}
