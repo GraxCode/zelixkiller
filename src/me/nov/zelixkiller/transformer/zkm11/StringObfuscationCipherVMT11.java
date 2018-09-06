@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 
+import javax.crypto.BadPaddingException;
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -44,6 +46,7 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 
 	public int success = 0;
 	public int failures = 0;
+	private int inners = 0;
 
 	@Override
 	public boolean isAffected(ClassNode cn) {
@@ -77,18 +80,62 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 				for (Entry<ClassNode, byte[]> e : isolatedJarCopy.entrySet()) {
 					vm.predefine(e.getKey().name.replace("/", "."), e.getValue());
 				}
-				Class<?> clazz = Class.forName(cn.name.replace("/", "."), true, vm); // vm.loadClass(cn.name.replace("/", "."));
+				Class<?> clazz = Class.forName(cn.name.replace("/", "."), true, vm); // or vm.loadClass(cn.name.replace("/", ".")) which won't load superclasses
 				replaceInvokedynamicCalls(clazz, cn);
 				success++;
 			} catch (Throwable t) {
 				if (t instanceof VerifyError) {
-					ZelixKiller.logger.log(Level.SEVERE, "Verify exception at loading proxy " + cn.name, t);
+					ZelixKiller.logger.log(Level.SEVERE, "Verify exception at loading proxy for class " + cn.name, t);
 					IssueUtils.dump(new File("proxy-dump-verify-error.jar"), ASMUtils.getNode(isolatedJarCopy.get(cn)));
-				} else
-					ZelixKiller.logger.log(Level.SEVERE, "Exception at loading proxy " + cn.name, t);
-				failures++;
+				} else if (t instanceof ExceptionInInitializerError && t.getCause() instanceof BadPaddingException) {
+					try {
+						// if the key is wrong, there may be an outer class that didn't get invoked
+						treatAsInner(cn, ja.getClasses().values(), isolatedJarCopy);
+						success++;
+					} catch (Throwable t2) {
+						ZelixKiller.logger.log(Level.SEVERE, "Exception at treating class as inner class " + cn.name, t2);
+						failures++;
+					}
+				} else {
+					ZelixKiller.logger.log(Level.SEVERE, "Exception at loading proxy for class " + cn.name, t);
+					failures++;
+				}
+
 			}
 		}
+	}
+
+	/**
+	 * Find and decrypt outer class(es) of class first
+	 */
+	private void treatAsInner(ClassNode node, Collection<ClassNode> values, HashMap<ClassNode, byte[]> isolatedJarCopy)
+			throws Exception {
+		ClassDefiner vm = new ClassDefiner(ClassLoader.getSystemClassLoader());
+		for (Entry<ClassNode, byte[]> e : isolatedJarCopy.entrySet()) {
+			vm.predefine(e.getKey().name.replace("/", "."), e.getValue());
+		}
+		inners++;
+		int surroundings = 0;
+		Outer: for (ClassNode cn : values) {
+			for (MethodNode mn : cn.methods) {
+				for (AbstractInsnNode ain : mn.instructions.toArray()) {
+					if (ain.getOpcode() == INVOKESPECIAL) {
+						MethodInsnNode min = (MethodInsnNode) ain;
+						if (min.owner.equals(node.name) && min.name.equals("<init>")) {
+							Class.forName(cn.name.replace("/", "."), true, vm);
+							surroundings++;
+							continue Outer;
+						}
+					}
+				}
+			}
+		}
+		if (surroundings > 1) {
+			ZelixKiller.logger.log(Level.WARNING,
+					"Inner class " + node.name + " has multiple surroundings (" + surroundings + ")");
+		}
+		Class<?> clazz = Class.forName(node.name.replace("/", "."), true, vm);
+		replaceInvokedynamicCalls(clazz, node);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -158,7 +205,7 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 		if (clinit != null && StringObfuscationCipherT11.containsDESPadLDC(clinit)) {
 			try {
 				InsnList decryption = ClinitCutter.cutClinit(clinit);
-				 removeUnwantedCalls(decryption);
+				removeUnwantedCalls(decryption);
 				MethodNode newclinit = new MethodNode(ACC_STATIC, "<clinit>", "()V", null, null);
 				if (debugClassInit) {
 					decryption
@@ -305,6 +352,7 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 
 	@Override
 	public void postTransform() {
-		ZelixKiller.logger.log(Level.INFO, "Succeeded in " + success + " classes, failed in " + failures);
+		ZelixKiller.logger.log(Level.INFO,
+				"Succeeded in " + success + " classes (" + inners + " inner classes), failed in " + failures);
 	}
 }
