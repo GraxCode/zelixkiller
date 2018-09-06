@@ -87,7 +87,8 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 				if (t instanceof VerifyError) {
 					ZelixKiller.logger.log(Level.SEVERE, "Verify exception at loading proxy for class " + cn.name, t);
 					IssueUtils.dump(new File("proxy-dump-verify-error.jar"), ASMUtils.getNode(isolatedJarCopy.get(cn)));
-				} else if (t instanceof ExceptionInInitializerError && t.getCause() instanceof BadPaddingException) {
+				} else if (t instanceof ExceptionInInitializerError && (t.getCause() instanceof BadPaddingException
+						|| t.getCause() instanceof ArrayIndexOutOfBoundsException)) {
 					try {
 						// if the key is wrong, there may be an outer class that didn't get invoked
 						treatAsInner(cn, ja.getClasses().values(), isolatedJarCopy);
