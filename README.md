@@ -45,4 +45,5 @@ zelixkiller is licensed under the GNU General Public License 3.0
 #### Notice
 Do not deobfuscate any file that doesn't belong to you.  
 Please open an issue or send me an email if your file won't deobfuscate properly. If a "fault-proxy-dump" file is created please attach.   
+Transformers that use vm emulation could possibly execute dangerous code, use with caution!
 Note that output files are most likely not runnable. If you still want to try to run them use "-noverify" as JVM argument!
