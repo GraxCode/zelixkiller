@@ -16,7 +16,7 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
 | --- | --- | --- |
 | String Obfuscation | s11 | Deobfuscates (enhanced) string obfuscation |
 | String Obfuscation (Cipher Version) | sivm11 / ~~si11~~  | Deobfuscates string obfuscation that uses DES Cipher and invokedynamic calls |
-| ~~Reference Obfuscation~~ | r11 | Deobfuscates reflection obfuscation |
+| Reference Obfuscation | rvm11 | Deobfuscates reflection obfuscation |
 | Control Flow Obfuscation | cf11 | Deobfuscates flow obfuscation |
 
 ### ZKM 8
