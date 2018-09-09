@@ -378,9 +378,14 @@ public class Sandbox {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			Class<?> c = defineClass(name, bytes, 0, bytes.length);
-			resolveClass(c);
-			return c;
+			try {
+				Class<?> c = defineClass(name, bytes, 0, bytes.length);
+				resolveClass(c);
+				return c;
+			} catch (Throwable t) {
+				t.printStackTrace();
+				return null;
+			}
 		}
 
 		@Override

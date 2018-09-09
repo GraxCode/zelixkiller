@@ -140,7 +140,7 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 	}
 
 	@SuppressWarnings("deprecation")
-	private ArrayList<ClassNode> findDecryptionClasses(Map<String, ClassNode> map) {
+	public static ArrayList<ClassNode> findDecryptionClasses(Map<String, ClassNode> map) {
 		ArrayList<ClassNode> dc = new ArrayList<>();
 		Outer: for (ClassNode cn : map.values()) {
 			MethodNode clinit = cn.methods.stream().filter(mn -> mn.name.equals("<clinit>")).findFirst().orElse(null);
@@ -164,7 +164,7 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 		return dc;
 	}
 
-	private Collection<ClassNode> findBelongingClasses(ArrayList<MethodNode> visited, MethodNode method,
+	private static Collection<ClassNode> findBelongingClasses(ArrayList<MethodNode> visited, MethodNode method,
 			Map<String, ClassNode> map) {
 		ArrayList<ClassNode> list = new ArrayList<>();
 		if (visited.contains(method))
@@ -305,7 +305,10 @@ public class StringObfuscationCipherVMT11 extends Transformer {
 								Field f = proxy.getDeclaredField(fin.name);
 								if (f != null && f.getType() == long.class) {
 									f.setAccessible(true);
-									mn.instructions.set(fin, new LdcInsnNode((long) f.get(null)));
+									long l = (long) f.get(null);
+									if (l != 0) {
+										mn.instructions.set(fin, new LdcInsnNode(l));
+									}
 								}
 							} catch (Exception e) {
 								ZelixKiller.logger.log(Level.SEVERE, "Exception at inlining field", e);
