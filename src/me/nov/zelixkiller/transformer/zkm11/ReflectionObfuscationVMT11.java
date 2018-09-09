@@ -1,6 +1,7 @@
 package me.nov.zelixkiller.transformer.zkm11;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleInfo;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
@@ -128,7 +129,7 @@ public class ReflectionObfuscationVMT11 extends Transformer {
 											return;
 										}
 										Lookup lookup = getLookup(Class.forName(cn.name.replace('/', '.'), true, vm));
-										ReflectionUtils.setFinal(lookup.getClass().getDeclaredField("allowedModes"), lookup, -1); //trust lookup
+										ReflectionUtils.setFinal(lookup.getClass().getDeclaredField("allowedModes"), lookup, -1); // trust lookup
 										// emulate invokedynamic to retrieve callsite
 										MethodHandle mh = (MethodHandle) m.invoke(null, lookup, cs, idin.name, mt, longValue,
 												secondLongValue);
@@ -146,7 +147,7 @@ public class ReflectionObfuscationVMT11 extends Transformer {
 									} else {
 										long longValue = (long) frame.getStack(frame.getStackSize() - 1).getValue();
 										Lookup lookup = getLookup(Class.forName(cn.name.replace('/', '.'), true, vm));
-										ReflectionUtils.setFinal(lookup.getClass().getDeclaredField("allowedModes"), lookup, -1); //trust lookup
+										ReflectionUtils.setFinal(lookup.getClass().getDeclaredField("allowedModes"), lookup, -1); // trust lookup
 										// emulate invokedynamic to retrieve callsite
 										MethodHandle mh = (MethodHandle) m.invoke(null, lookup, cs, idin.name, mt, longValue);
 										AbstractInsnNode original = getOriginalNode(mh, lookup);
@@ -179,36 +180,12 @@ public class ReflectionObfuscationVMT11 extends Transformer {
 		original.setAccessible(true);
 		MethodHandle originalHandle = (MethodHandle) original.get(mh);
 
-		// hack to bypass java.lang.IllegalAccessException: class is not public
-		// this is basically MethodHandles.revealDirect without access restriction
+		MethodHandleInfo direct = lookup.revealDirect(originalHandle);
 
-		Object mn = getMemberName(originalHandle);
-		Class<?> memberName = mn.getClass();
-		Method getReferenceKind = memberName.getDeclaredMethod("getReferenceKind");
-		getReferenceKind.setAccessible(true);
-		byte refKind = (byte) getReferenceKind.invoke(mn);
-		Method getDeclaringClass = memberName.getDeclaredMethod("getDeclaringClass");
-		getDeclaringClass.setAccessible(true);
-		Class<?> declaringClass = (Class<?>) getDeclaringClass.invoke(mn);
-		Method getName = memberName.getDeclaredMethod("getName");
-		getName.setAccessible(true);
-		String name = (String) getName.invoke(mn);
-		Method getMethodType = memberName.getDeclaredMethod("getMethodOrFieldType");
-		getMethodType.setAccessible(true);
-		MethodType methodType = (MethodType) getMethodType.invoke(mn);
-
-		Method isSpecial = MethodHandle.class.getDeclaredMethod("isInvokeSpecial");
-		isSpecial.setAccessible(true);
-		if (refKind == 7 && !(boolean) isSpecial.invoke(originalHandle)) {
-			refKind = 5;
-		}
-		if (refKind == 5 && declaringClass.isInterface()) {
-			refKind = 9;
-		}
-		if(declaringClass.getName().contains("$BindCaller$T/")) {
-			throw new RuntimeException("Couldn't decrypt anonymous class");
-			//TODO bypass UNSAFE.defineAnonymousClass MethodHandleImpl$BindCaller
-		}
+		int refKind = direct.getReferenceKind();
+		Class<?> declaringClass = direct.getDeclaringClass();
+		String name = direct.getName();
+		MethodType methodType = direct.getMethodType();
 		int op = -1;
 		if (refKind <= 4) {
 			switch (refKind) {
@@ -252,12 +229,6 @@ public class ReflectionObfuscationVMT11 extends Transformer {
 		}
 		return new MethodInsnNode(op, declaringClass.getName().replace('.', '/'), name,
 				methodType.toMethodDescriptorString());
-	}
-
-	private Object getMemberName(MethodHandle originalHandle) throws Exception {
-		Method internalMemberName = MethodHandle.class.getDeclaredMethod("internalMemberName");
-		internalMemberName.setAccessible(true);
-		return internalMemberName.invoke(originalHandle);
 	}
 
 	/**
@@ -340,12 +311,6 @@ public class ReflectionObfuscationVMT11 extends Transformer {
 										mn.instructions.insert(ain, new InsnNode(POP2));
 									}
 									ain = ain.getNext();
-									if (ain == null) {
-										// TODO
-										mn.instructions.clear();
-										mn.instructions.add(new InsnNode(RETURN));
-										continue;
-									}
 									while (ain.getNext() != null) {
 										mn.instructions.remove(ain.getNext());
 									}
