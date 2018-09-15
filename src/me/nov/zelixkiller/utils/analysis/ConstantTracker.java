@@ -1,6 +1,8 @@
 package me.nov.zelixkiller.utils.analysis;
 
 import static org.objectweb.asm.Opcodes.*;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.objectweb.asm.Type;
@@ -14,7 +16,7 @@ public class ConstantTracker extends Interpreter<ConstantTracker.ConstantValue> 
 	static final ConstantValue NULL = new ConstantValue(BasicValue.REFERENCE_VALUE, null);
 
 	public static final class ConstantValue implements Value {
-		final Object value; // null if unknown or NULL
+		Object value; // null if unknown or NULL
 		final BasicValue type;
 
 		ConstantValue(BasicValue type, Object value) {
@@ -56,6 +58,10 @@ public class ConstantTracker extends Interpreter<ConstantTracker.ConstantValue> 
 				return ~0;
 			return (value == null ? 7 : value.hashCode()) + type.hashCode() * 31;
 		}
+
+		public void setValue(Object value) {
+			this.value = value;
+		}
 	}
 
 	BasicInterpreter basic = new BasicInterpreter() {
@@ -75,9 +81,32 @@ public class ConstantTracker extends Interpreter<ConstantTracker.ConstantValue> 
 			return BasicValue.UNINITIALIZED_VALUE;
 		}
 	};
+	
+	private Object[] args;
+	private Type[] desc;
 
 	public ConstantTracker() {
 		super(ASM5);
+	}
+
+	/**
+	 * Inline method arguments
+	 */
+	public ConstantTracker(boolean isStatic, String descr, Object[] args) {
+		super(ASM5);
+		this.desc = Type.getArgumentTypes(descr);
+		ArrayList<Object> reformatted = new ArrayList<>();
+		int local = isStatic ? 0 : 1;
+		if (isStatic) {
+			reformatted.set(0, null); // this reference
+		}
+		for (int i = 0; i < desc.length; ++i) {
+			reformatted.set(local++, i >= args.length ? null : args[i]);
+			if (desc[i].getSize() == 2) {
+				reformatted.set(local++, null);
+			}
+		}
+		this.args = reformatted.toArray(new Object[0]);
 	}
 
 	@Override
@@ -116,6 +145,21 @@ public class ConstantTracker extends Interpreter<ConstantTracker.ConstantValue> 
 
 	@Override
 	public ConstantValue copyOperation(AbstractInsnNode insn, ConstantValue value) {
+		if (args != null && value.getValue() == null) {
+			//unloaded arguments
+			switch(insn.getOpcode()) {
+			case ALOAD:
+			case ILOAD:
+			case LLOAD:
+			case DLOAD:
+			case FLOAD:
+				Object val = args[((VarInsnNode)insn).var];
+				value.setValue(val);
+				break;
+				default:
+					break;
+			}
+		}
 		return value;
 	}
 
