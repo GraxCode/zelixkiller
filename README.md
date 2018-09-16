@@ -1,19 +1,19 @@
 # ZelixKiller 11
 Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation and other techniques coming soon)
 ## CLI
-| Argument | Description |
-| --- | --- |
-| --help | Displays help |
-| --input | Specify input file |
-| --output | Specify output file |
-| --transformer | Specify transformer |
-
+| Argument | Short Version | Description |
+| --- | --- | --- |
+| --help | -? | Displays help |
+| --input | -i | Specify input file |
+| --output | -o | Specify output file |
+| --transformer | -t | Specify transformer |
+| --verbose | -v | Print more information |
 ## Transformer
 
 ### ZKM 11
 
 | Transformer | Short Version | Description |
-| --- | --- | --- |
+| --- | --- | --- | --- |
 | String Obfuscation | s11 | Deobfuscates (enhanced) string obfuscation |
 | String Obfuscation (Cipher Version) | sivm11 / ~~si11~~  | Deobfuscates string obfuscation that uses DES Cipher and invokedynamic calls |
 | Reference Obfuscation | rvm11 | Deobfuscates reflection obfuscation |
@@ -36,6 +36,9 @@ Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation an
    
 Transformers marked with a star may also work using transformers intended for more recent versions. 
 Crossed out means that the transformer is not implemented yet.
+## Which transformer
+If you're not sure which transformer you should use please use this [guide](docs/GUIDE.md).
+
 ## Libraries needed
 commons-io 2.6, commons-cli 1.4, asm 6+
 
