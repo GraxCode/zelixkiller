@@ -1,5 +1,5 @@
 # ZelixKiller 11
-Kill every protection by zelix.com with zelixkiller11! (Reference obfuscation and other techniques coming soon)
+Kill every protection by zelix.com with zelixkiller11!
 ## CLI
 | Argument | Short Version | Description |
 | --- | --- | --- |
