@@ -1,4 +1,5 @@
 # ZelixKiller 11
+# Outdated! Use threadtear!
 Kill every protection by zelix.com with zelixkiller11!
 ## CLI
 | Argument | Short Version | Description |
